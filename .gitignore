@@ -1,3 +1,4 @@
 OUTPUT*
 videos*
 __pycache__/
+lib/config.py

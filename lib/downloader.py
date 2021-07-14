@@ -2,6 +2,7 @@ import subprocess
 import os
 from lib.cloud_storage import CloudStorage
 import lib.config as config
+import time
 
 
 def download_video(video_id, download_path, video_format="mp4", log_file=None):
@@ -23,7 +24,6 @@ def download_video(video_id, download_path, video_format="mp4", log_file=None):
         ["youtube-dl", "https://youtube.com/watch?v={}".format(video_id), "--quiet", "-f",
         "bestvideo[ext={}]+bestaudio/best".format(video_format), "--output", download_path, "--no-continue"], stderr=stderr)
     success = return_code == 0
-    print(f"download status {success}")
     if log_file is not None:
         stderr.close()
 
@@ -52,8 +52,10 @@ def upload2blob(video_file):
     blob_video = CloudStorage(config.STORAGE_ACCOUNT_NAME, "sports-1m", config.CONNECTION_STRING, config.SAS_TOKEN)
     try:
         blob_video.upload_file(video_file, "/".join(video_file.split("/")[-3:]))
+        time.sleep(1)
         os.remove(video_file)
-    except:
+    except Exception as e:
+        print(f"Failed to remove {video_file}: {str(e)}")
         pass
 
 
@@ -101,7 +103,7 @@ def process_video(video_id, directory, start=None, end=None, video_format="mp4",
     if not os.path.isfile(download_path) and os.path.isfile(mkv_download_path):
         download_path = mkv_download_path
         mp4file = mkv_download_path.replace("mkv", "mp4")
-        convert_mkv2mp4 = ["ffmpeg", "-y", "-i", mkv_download_path, "-codec", "copy", mp4file, "-loglevel", "fatal"]
+        convert_mkv2mp4 = ["ffmpeg", "-y", "-i", mkv_download_path, "-map", "0", "-c", "copy", "-c:a", "aac", mp4file, "-strict", "-2", "-loglevel", "fatal"]
         subprocess.run(convert_mkv2mp4)
         download_path = mp4file
         os.remove(mkv_download_path)

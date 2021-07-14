@@ -1,2 +1,3 @@
 azure-storage-blob
 youtube-dl
+tqdm
